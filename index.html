@@ -1,0 +1,579 @@
+<!--
+
+Expand both halves to their natural height
+If they both fit
+  Expand the top half until the screen is filled
+Else
+  Shrink the bottom half until it fits
+  If the bottom half is less than max(40%, 150px)
+    Grow the bottom half to max(40%, 150px)
+    Shrink the top half to fit
+
+
+/* Expressed as JavaScript, it would be something like this: */
+function sectionHeights(screenHeight, topNaturalHeight, bottomNaturalHeight) {
+  let topHeight = topNaturalHeight;
+  let bottomHeight = bottomNaturalHeight;
+
+  if (topHeight + bottomHeight <= screenHeight) {
+    topHeight = screenHeight - bottomHeight;
+  } else {
+    bottomHeight = screenHeight - topHeight;
+
+    if (bottomHeight < Math.max(screenHeight * 0.4, 150)) {
+      bottomHeight = Math.max(screenHeight * 0.4, 150);
+      topHeight = screenHeight - bottomHeight;
+    }
+  }
+
+  return {
+    topHeight,
+    bottomHeight,
+  };
+}
+
+/* I think this is the simplest way to express it */
+grid-template:
+  "top"    minmax(min(max-content, 60%), 1fr)
+  "bottom" fit-content(max(40%, 150px))
+;
+
+/* In this one, auto could also be max-content */
+grid-template:
+  "top"    minmax(min(auto, 60%), 1fr)
+  "bottom" minmax(max(40%, 150px), auto)
+;
+
+-->
+
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+  <title>Optimise image</title>
+
+  <style>
+    *,
+    ::before,
+    ::after {
+      box-sizing: border-box;
+    }
+
+    html,
+    body,
+    .app {
+      width: 100%;
+      height: 100%;
+      margin: 0;
+      font-family: sans-serif;
+      color: white;
+    }
+
+    h2 {
+      margin: 0;
+    }
+
+    img {
+      display: block;
+      margin-top: 10px;
+      background: hsl(0, 0%, 30%);
+      width: 100%;
+      height: auto;
+    }
+
+    label {
+      display: inline-flex;
+      flex-direction: column;
+      padding: 5px;
+      margin: 5px;
+      background: hsl(0, 0%, 0%);
+      border-radius: 5px;
+    }
+
+    label > span + * {
+      margin-top: 5px;
+    }
+
+    input,
+    select {
+      padding: 5px 0;
+      border: 0;
+      margin: 0;
+      background: white;
+      text-indent: 5px;
+      border-radius: 3px;
+    }
+
+    [type="file"] {
+      color: black;
+    }
+
+    /* grid version
+    .app {
+      display: grid;
+      grid-template:
+        "original optimised" minmax(min(max-content, 60%), 1fr)
+        "tools    tools"     fit-content(max(40%, 150px))
+      / 50%       50%;
+    }
+
+    .images {
+      display: contents;
+    }
+
+    .original {
+      grid-area: original;
+    }
+
+    .optimised {
+      grid-area: optimised;
+    }
+
+    .tools {
+      grid-area: tools;
+    }
+    /* */
+
+    /* flex version */
+    .images {
+      display: flex;
+    }
+
+    .original,
+    .optimised {
+      flex-basis: 50%;
+    }
+    /* */
+
+    .tools {
+      padding: 10px 10px;
+    }
+
+    .tools h2 {
+      margin: 0 5px;
+    }
+
+    .original,
+    .optimised {
+      padding-top: 10px;
+      overflow-y: auto;
+    }
+
+    .original h2,
+    .optimised h2 {
+      margin: 0 15px;
+    }
+
+    .original {
+      background: hsl(0, 0%, 5%);
+    }
+
+    .optimised {
+      background: hsl(0, 0%, 10%);
+    }
+
+    .tools {
+      background: hsl(0, 0%, 15%);
+      overflow: hidden;
+      overflow-y: auto;
+    }
+
+    .values {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      grid-auto-flow: dense;
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <div class="images">
+      <div class="original">
+        <h2>Original quality image</h2>
+        <img alt="Original quality image">
+      </div>
+      <div class="optimised">
+        <h2>Optimised quality image</h2>
+        <img alt="Optimised quality image">
+      </div>
+    </div>
+
+    <div class="tools">
+      <h2>Tools</h2>
+      <form class="values" encType="multipart/form-data" action="">
+        <label>
+          <span>Source image</span>
+          <input class="original-image" type="file" name="srcPath" value="undefined" />
+        </label>
+
+        <!--
+          <label>
+            <span>Source path</span>
+            <input name="srcPath" value="undefined" />
+          </label>
+
+          <label>
+            <span>Source data</span>
+            <input name="srcData" value="null" />
+          </label>
+
+          <label>
+            <span>Source format</span>
+            <input name="srcFormat" value="null" />
+          </label>
+
+          <label>
+            <span>Destination Path</span>
+            <input name="dstPath" value="undefined" />
+          </label>
+        -->
+
+        <!-- range
+        <label>
+          <span>Quality: <span></span></span>
+          <input type="range" min="1" max="100" name="quality" value="92" />
+        </label>
+        <script>
+          let spans = document.querySelectorAll("span");
+          let inputs = document.querySelectorAll("input");
+
+          span = spans[spans.length - 1];
+          input = inputs[inputs.length - 1];
+
+          span.textContent = input.value;
+          input.oninput = e => { span.textContent = input.value };
+        </script>
+        -->
+        <label>
+          <span>Improve compatibility</span>
+          <input name="careful" type="checkbox" />
+        </label>
+
+        <label>
+          <span>Memory usage</span>
+          <select>
+            <option label="normal" value="">
+            <!-- --no-conserve-memory -->
+            <option label="hog memory" value="no-conserve-memory">
+            <!-- --conserve-memory -->
+            <option label="conserve memory" value="conserve-memory">
+          </select>
+        </label>
+
+        <label>
+          <span>Delete frames</span>
+          <select name="delete">
+            <!-- --delete "#3" "#7" "#11" "#15" "#19" "#24" --done -->
+            <option label="none" value="">
+            <!-- --delete "#3" "#7" "#11" "#15" "#19" "#24" --done -->
+            <option label="every 4th" value="1/3">
+            <!-- --delete "#2" "#5" "#8" "#11" "#14" "#17" --done -->
+            <option label="every 3rd" value="1/3">
+            <!-- --delete "#1" "#3" "#5" "#7" "#9" "#11" --done -->
+            <option label="every 2nd" value="1/2">
+            <!-- --delete "#1" "#2" "#4" "#5" "#7" "#8" --done -->
+            <option label="2 in 3" value="2/3">
+            <!-- --delete "#1" "#2" "#3" "#5" "#6" "#7" --done -->
+            <option label="3 in 4" value="3/4">
+          </select>
+        </label>
+
+        <div style="grid-column: span 2;grid-row: span 3;">
+          <div style="display: flex">
+            <label style="flex-grow: 1; flex-basis: 30%;">
+              <span>Crop box style</span>
+              <select name="crop-method">
+                <!-- crop 10,10+-10x-10 -->
+                <option label="trim" value="+-">
+                <!-- crop 10,10-90,90 -->
+                <option label="to" value="-">
+                <!-- crop 10,10+80x80 -->
+                <option label="size" value="+">
+              </select>
+            </label>
+            <label style="flex-grow: 1; flex-basis: 30%;">
+              <span>Crop transparent pixels</span>
+              <input name="crop-transparency" type="checkbox" />
+            </label>
+          </div>
+
+          <div style="display: flex">
+            <label style="flex-grow: 1">
+              <span>Crop x: from</span>
+              <input name="crop-x-from" placeholder="0" type="tel">
+            </label style="display: flex">
+            <label style="flex-grow: 1">
+              <span>Crop x: to</span>
+              <input name="crop-x-to" placeholder="0" type="tel">
+            </label>
+          </div>
+
+          <div style="display: flex">
+            <label style="flex-grow: 1">
+              <span>Crop y: from</span>
+              <input name="crop-y-from" placeholder="0" type="tel">
+            </label>
+            <label style="flex-grow: 1">
+              <span>Crop y: to</span>
+              <input name="crop-y-to" placeholder="0" type="tel">
+            </label>
+          </div>
+        </div>
+
+        <div style="display: flex; align-items: stretch;">
+          <label style="flex-grow: 1">
+            <span>Flip horizontally</span>
+            <input name="flip-horizontal" type="checkbox" />
+          </label style="width: 100%">
+
+          <label style="flex-grow: 1">
+            <span>Flip vertically</span>
+            <input name="flip-vertical" type="checkbox" />
+          </label>
+        </div>
+
+        <label>
+          <span>Interlace</span>
+          <input name="interlace" type="checkbox" />
+        </label>
+
+        <label>
+          <span>Rotate by</span>
+          <select name="rotate">
+            <option label="0°" value="0">
+            <!-- --rotate-90" -->
+            <option label="90°" value="90">
+            <!-- --rotate-180" -->
+            <option label="180°" value="180">
+            <!-- --rotate-270" -->
+            <option label="270°" value="270">
+          </select>
+        </label>
+
+        <!--
+          --delay 100 "#0"
+          <label>
+            <span>delay" type="tel" /></span>
+            <input name="delay" type="tel" />
+          </label>
+        -->
+
+        <div style="grid-row: span 2; display: flex; flex-direction: column; align-items: stretch;">
+          <label>
+            <span>Compression</span>
+            <input name="lossy" placeholder="0" type="tel" />
+          </label>
+
+          <label>
+            <span>Optimisation agression</span>
+            <select name="optimize">
+              <!-- optimize=1 -->
+              <option label="Fast" value="1">
+              <!-- optimize=2 -->
+              <option label="Try a litte" value="2">
+              <!-- optimize=3 -->
+              <option label="Try hard" value="3">
+            </select>
+          </label>
+        </div>
+
+        <div style="grid-row: span 2; display: flex; flex-direction: column; align-items: stretch;">
+          <label>
+            <span>Compression</span>
+            <span>
+              <input id="lossy_input" name="lossy_input" placeholder="0" step="0.00001" value="0" type="range" max="10" />
+              <span id="lossy_value"></span>
+            </span>
+            <script>
+              lossy_value.innerText = Math.round((+lossy_input.value) ** 3);
+              lossy_input.oninput = e => {
+                if (!isNaN(lossy_input.value)) {
+                  lossy_value.innerText = Math.round((+lossy_input.value) ** 3);
+                }
+              }
+            </script>
+          </label>
+        </div>
+
+        <div style="grid-column: span 2; grid-row: span 2;">
+          <div style="display: flex">
+            <label style="flex-grow: 1; flex-basis: 30%">
+              <span>Resize fit</span>
+              <select name="resize-fit">
+                <!--
+                  scale 0.8
+                  scale 0.8x0.8
+                -->
+                <option label="Scale" value="scale">
+                <!--
+                  resize 80x80
+                  resize-width 80
+                  resize-height 80
+                -->
+                <option label="Squish" value="resize">
+                <!--
+                  resize-fit 80x80
+                  resize-fit-width 80
+                  resize-fit-height 80
+                -->
+                <option label="Fit" value="resize-fit">
+              </select>
+            </label>
+
+            <label style="flex-grow: 1; flex-basis: 30%">
+              <span>Resize algorithm</span>
+              <select name="resize-method">
+                <option label="sample" value="sample" >
+                <option label="mix" value="mix" >
+                <option label="box" value="box" >
+                <option label="catrom" value="catrom" >
+                <option label="mitchell" value="mitchell" >
+                <option label="lanczos2" value="lanczos2" >
+                <option label="lanczos3" value="lanczos3" >
+              </select>
+            </label>
+          </div>
+
+          <div style="display: flex">
+            <label style="flex-basis: 20%; flex-grow: 1">
+              <span>Resize X</span>
+              <input name="resize-x" type="number" placeholder="0">
+            </label>
+
+            <label style="flex-basis: 20%; flex-grow: 1">
+              <span>Resize Y</span>
+              <input name="resize-y" type="number" placeholder="0">
+            </label>
+
+            <label style="flex-basis: 30%; flex-grow: 1">
+              <span>Colours for resizing</span>
+              <input name="resize-colors" value="256" type="tel" />
+            </label>
+          </div>
+        </div>
+
+        <div style="grid-row: span 2; display: flex; flex-direction: column; align-items: stretch;">
+          <label>
+            <span>Colors</span>
+            <input name="colors" value="256" />
+          </label>
+
+          <label>
+            <span>Color choosing strategy</span>
+            <select name="color-method">
+              <option label="diversity" value="diversity" >
+              <option label="blend-diversity" value="blend-diversity" >
+              <option label="median-cut" value="median-cut" >
+            </select>
+          </label>
+        </div>
+
+        <label>
+          <span>Dither type</span>
+          <select name="dither">
+            <option label="floyd-steinberg" value="floyd-steinberg" >
+            <option label="ro64" value="ro64" >
+            <option label="o3" value="o3" >
+            <option label="o4" value="o4" >
+            <option label="o8" value="o8" >
+            <option label="ordered" value="ordered" >
+            <option label="halftone" value="halftone" >
+            <option label="squarehalftone" value="squarehalftone" >
+            <option label="diagonal" value="diagonal" >
+          </select>
+        </label>
+
+        <label>
+          <span>Gamma</span>
+          <input name="gamma" placeholder="2.2" type="number" />
+        </label>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    let input = document.querySelector(".original-image");
+    input.oninput = event => {
+      if (input.files && input.files[0]) {
+        var formData = new FormData();
+        formData.append("gif", event.target.files[0]);
+        formData.append("lossy", 100);
+
+        document.querySelector('.original img').src = URL.createObjectURL(event.target.files[0]);
+        fetch("http://localhost:3000/optimise", {
+          method: "POST",
+          body: formData,
+        })
+        .then(a => a.blob())
+        .then(a => {
+          document.querySelector('.original img').src = URL.createObjectURL(event.target.files[0]);
+          document.querySelector('.optimised img').src = URL.createObjectURL(a);
+        });
+      }
+    }
+  </script>
+
+  <script>
+    let imageSection = document.querySelector(".images");
+    let toolsSection = document.querySelector(".tools");
+
+    function getSectionHeights(screenHeight, topNaturalHeight, bottomNaturalHeight) {
+      let topHeight = topNaturalHeight;
+      let bottomHeight = bottomNaturalHeight;
+
+      if (topHeight + bottomHeight <= screenHeight) {
+        topHeight = screenHeight - bottomHeight;
+      } else {
+        bottomHeight = screenHeight - topHeight;
+
+        if (bottomHeight < Math.max(screenHeight * 0.3, 150)) {
+          bottomHeight = Math.max(screenHeight * 0.3, 150);
+          topHeight = screenHeight - bottomHeight;
+        }
+      }
+
+      return {
+        topHeight,
+        bottomHeight,
+      };
+    }
+
+    function setSectionHeights() {
+      imageSection.style.height = null;
+      toolsSection.style.height = null;
+
+      let imageSectionNaturalHeight = imageSection.getBoundingClientRect().height;
+      let toolsSectionNaturalHeight = toolsSection.getBoundingClientRect().height;
+      let {
+        topHeight,
+        bottomHeight,
+      } = getSectionHeights(window.innerHeight, imageSectionNaturalHeight, toolsSectionNaturalHeight);
+
+      imageSection.style.height = `${topHeight}px`;
+      toolsSection.style.height = `${bottomHeight}px`;
+    }
+
+    let rerunHeights = false;
+    let setHeightTimer = false;
+    function startResizeTimer() {
+      if (!setHeightTimer) {
+        setSectionHeights();
+        rerunHeights = false;
+        setHeightTimer = setTimeout(() => {
+          setHeightTimer = false;
+          if (rerunHeights) {
+            startResizeTimer();
+          }
+        }, 300);
+      } else {
+        rerunHeights = true;
+      }
+    }
+    startResizeTimer();
+    window.addEventListener("resize", startResizeTimer, { passive: true });
+  </script>
+</body>
+</html>
