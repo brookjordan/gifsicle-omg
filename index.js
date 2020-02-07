@@ -28,6 +28,8 @@ function sendGif(request, resource, next) {
   });
 };
 
+if (!fs.existsSync("i")){ fs.mkdirSync("i"); }
+
 app.use(require("cors")());
 
 app.get("/", (request, resource, next) => {
@@ -39,12 +41,51 @@ app.post("/optimise",
   uploadGif.single("gif"),
   (request, resource, next) => {
     let compressedGifPath = `${request.file.path}.gif`;
-    execFile(gifsicle, [
-      "-o", compressedGifPath,
-      "--colors",  16,
-      "--flip-horizontal",
-      request.file.path,
-    ], (error, data) => {
+    let options = [`--output=${compressedGifPath}`];
+    if (+request.body.lossy) {
+      options.push(`--lossy=${Math.round(request.body.lossy)}`);
+    }
+    if (
+      request.body.optimize
+      && request.body.optimize > 0 && request.body.optimize < 4
+    ) {
+      options.push(`--optimize=${Math.round(request.body.optimize)}`);
+    }
+    if (request.body.colors && +request.body.colors) {
+      options.push(`--colors=${Math.round(request.body.colors)}`);
+    }
+    if (request.body.flip_horizontal && request.body.flip_horizontal.toLowerCase() === "true") {
+      options.push("--flip-horizontal");
+    }
+    if (request.body.flip_vertical && request.body.flip_vertical.toLowerCase() === "true") {
+      options.push("--flip-vertical");
+    }
+    if (+request.body.resize_x || +request.body.resize_y) {
+      let resizeX = +request.body.resize_x;
+      let resizeY = +request.body.resize_y || resizeX;
+      resizeX = resizeX || resizeY;
+
+      if (request.body.resize_type === "resize") {
+        options.push(`--resize=${Math.min(800, resizeX)}x${Math.min(800, resizeY)}`);
+      } else if (request.body.resize_type === "resize-fit") {
+        options.push(`--resize-touch=${Math.min(800, resizeX)}x${Math.min(800, resizeY)}`);
+      } else {
+        options.push(`--scale=${Math.min(2, resizeX)}x${Math.min(2, resizeY)}`);
+      }
+    }
+    if (+request.body.resize_colors || +request.body.resize_colors) {
+      options.push(`--resize-colors=${+request.body.resize_colors}`);
+    }
+    if (
+      request.body.color_method
+      && ["diversity", "blend-diversity", "median-cut"].includes(request.body.color_method)
+    ) {
+      options.push(`--color-method=${request.body.color_method}`);
+    }
+    options.push(request.file.path);
+    console.log(options);
+
+    execFile(gifsicle, options, error => {
       if (error) { throw new Error(error); }
       (request.global || (request.global = {})).gifPath = compressedGifPath;
       next();

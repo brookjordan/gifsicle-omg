@@ -98,13 +98,15 @@ grid-template:
     }
 
     input,
-    select {
+    select,
+    button {
       padding: 5px 0;
       border: 0;
       margin: 0;
       background: white;
       text-indent: 5px;
       border-radius: 3px;
+      font: inherit;
     }
 
     [type="file"] {
@@ -204,9 +206,11 @@ grid-template:
     <div class="tools">
       <h2>Tools</h2>
       <form class="values" encType="multipart/form-data" action="">
-        <label>
+        <label style="grid-row: span 2; display: flex; flex-direction: column;">
           <span>Source image</span>
-          <input class="original-image" type="file" name="srcPath" value="undefined" />
+          <span style="flex-grow: 1; position: relative">
+            <input style="position: absolute; top: 0; left: 0; width: 100%; height: 100%" id="src_input" class="original-image" type="file" name="srcPath" value="undefined" />
+          </span>
         </label>
 
         <!--
@@ -326,12 +330,12 @@ grid-template:
         <div style="display: flex; align-items: stretch;">
           <label style="flex-grow: 1">
             <span>Flip horizontally</span>
-            <input name="flip-horizontal" type="checkbox" />
+            <input id="flip_horizontal_input" name="flip-horizontal" type="checkbox" />
           </label style="width: 100%">
 
           <label style="flex-grow: 1">
             <span>Flip vertically</span>
-            <input name="flip-vertical" type="checkbox" />
+            <input id="flip_vertical_input" name="flip-vertical" type="checkbox" />
           </label>
         </div>
 
@@ -363,13 +367,13 @@ grid-template:
 
         <div style="grid-row: span 2; display: flex; flex-direction: column; align-items: stretch;">
           <label>
-            <span>Compression</span>
-            <input name="lossy" placeholder="0" type="tel" />
+            <span>Compression: <span id="lossy_value">0</span></span>
+            <input id="lossy_input" name="lossy" step="0.00001" value="0" type="range" max="70.71067" />
           </label>
 
           <label>
             <span>Optimisation agression</span>
-            <select name="optimize">
+            <select id="optimize_input" name="optimize">
               <!-- optimize=1 -->
               <option label="Fast" value="1">
               <!-- optimize=2 -->
@@ -380,29 +384,23 @@ grid-template:
           </label>
         </div>
 
-        <div style="grid-row: span 2; display: flex; flex-direction: column; align-items: stretch;">
-          <label>
-            <span>Compression</span>
-            <span>
-              <input id="lossy_input" name="lossy_input" placeholder="0" step="0.00001" value="0" type="range" max="10" />
-              <span id="lossy_value"></span>
-            </span>
-            <script>
-              lossy_value.innerText = Math.round((+lossy_input.value) ** 3);
-              lossy_input.oninput = e => {
-                if (!isNaN(lossy_input.value)) {
-                  lossy_value.innerText = Math.round((+lossy_input.value) ** 3);
-                }
-              }
-            </script>
-          </label>
-        </div>
-
         <div style="grid-column: span 2; grid-row: span 2;">
           <div style="display: flex">
             <label style="flex-grow: 1; flex-basis: 30%">
               <span>Resize fit</span>
-              <select name="resize-fit">
+              <select
+                id="resize_type_input"
+                name="resize-fit"
+                onchange="
+                  if (resize_type_input.value === 'scale') {
+                    resize_x_unit.textContent = '×';
+                    resize_y_unit.textContent = '×';
+                  } else {
+                    resize_x_unit.textContent = 'px';
+                    resize_y_unit.textContent = 'px';
+                  }
+                "
+              >
                 <!--
                   scale 0.8
                   scale 0.8x0.8
@@ -415,17 +413,17 @@ grid-template:
                 -->
                 <option label="Squish" value="resize">
                 <!--
-                  resize-fit 80x80
-                  resize-fit-width 80
-                  resize-fit-height 80
+                  resize-touch 80x80
+                  resize-touch-width 80
+                  resize-touch-height 80
                 -->
-                <option label="Fit" value="resize-fit">
+                <option label="Contain" value="resize-touch">
               </select>
             </label>
 
             <label style="flex-grow: 1; flex-basis: 30%">
               <span>Resize algorithm</span>
-              <select name="resize-method">
+              <select id="resize_method_input" name="resize-method">
                 <option label="sample" value="sample" >
                 <option label="mix" value="mix" >
                 <option label="box" value="box" >
@@ -438,19 +436,48 @@ grid-template:
           </div>
 
           <div style="display: flex">
-            <label style="flex-basis: 20%; flex-grow: 1">
+            <label>
               <span>Resize X</span>
-              <input name="resize-x" type="number" placeholder="0">
+              <span style="display: flex">
+                <input
+                  style="width: 100px; margin-right: 5px"
+                  id="resize_x_input"
+                  name="resize-x"
+                  type="number"
+                  placeholder="1"
+                  oninput="resize_y_input.placeholder = resize_x_input.value || 1"
+                >
+                <span id="resize_x_unit">×</span>
+              </span>
             </label>
 
-            <label style="flex-basis: 20%; flex-grow: 1">
+            <label>
               <span>Resize Y</span>
-              <input name="resize-y" type="number" placeholder="0">
+              <span style="display: flex">
+                <input
+                  style="width: 100px; margin-right: 5px"
+                  id="resize_y_input"
+                  name="resize-y"
+                  type="number"
+                  placeholder="1"
+                  oninput="resize_x_input.placeholder = resize_y_input.value || 1"
+                >
+                <span id="resize_y_unit">×</span>
+              </span>
             </label>
 
             <label style="flex-basis: 30%; flex-grow: 1">
               <span>Colours for resizing</span>
-              <input name="resize-colors" value="256" type="tel" />
+              <select id="resize_colors_input" name="resize-colors">
+                <option value="256" label="256">
+                <option value="128" label="128">
+                <option value="64" label="64">
+                <option value="32" label="32">
+                <option value="16" label="16">
+                <option value="8" label="8">
+                <option value="4" label="4">
+                <option value="2" label="2">
+              </select>
             </label>
           </div>
         </div>
@@ -458,12 +485,21 @@ grid-template:
         <div style="grid-row: span 2; display: flex; flex-direction: column; align-items: stretch;">
           <label>
             <span>Colors</span>
-            <input name="colors" value="256" />
+            <select id="colors_input" name="colors">
+              <option value="256" label="256">
+              <option value="128" label="128">
+              <option value="64" label="64">
+              <option value="32" label="32">
+              <option value="16" label="16">
+              <option value="8" label="8">
+              <option value="4" label="4">
+              <option value="2" label="2">
+            </select>
           </label>
 
           <label>
             <span>Color choosing strategy</span>
-            <select name="color-method">
+            <select id="color_method_input" name="color-method">
               <option label="diversity" value="diversity" >
               <option label="blend-diversity" value="blend-diversity" >
               <option label="median-cut" value="median-cut" >
@@ -495,23 +531,11 @@ grid-template:
   </div>
 
   <script>
-    let input = document.querySelector(".original-image");
-    input.oninput = event => {
-      if (input.files && input.files[0]) {
-        var formData = new FormData();
-        formData.append("gif", event.target.files[0]);
-        formData.append("lossy", 100);
-
-        document.querySelector('.original img').src = URL.createObjectURL(event.target.files[0]);
-        fetch("http://localhost:3000/optimise", {
-          method: "POST",
-          body: formData,
-        })
-        .then(a => a.blob())
-        .then(a => {
-          document.querySelector('.original img').src = URL.createObjectURL(event.target.files[0]);
-          document.querySelector('.optimised img').src = URL.createObjectURL(a);
-        });
+    lossy_value.innerText = Math.round((+lossy_input.value) ** 2);
+    lossy_input.oninput = e => {
+      if (!isNaN(lossy_input.value)) {
+        lossy_value.innerText = Math.round((+lossy_input.value) ** 2);
+        requestImageCompression();
       }
     }
   </script>
@@ -574,6 +598,63 @@ grid-template:
     }
     startResizeTimer();
     window.addEventListener("resize", startResizeTimer, { passive: true });
+  </script>
+
+  <script>
+    let originalImage = document.querySelector('.original img');
+    let optimisedImage = document.querySelector('.optimised img');
+    originalImage.onload = startResizeTimer;
+    optimisedImage.onload = startResizeTimer;
+
+    function compressImage() {
+      if (!src_input.files || !src_input.files[0]) {
+        originalImage.src = "";
+        optimisedImage.src = "";
+      }
+
+      let formData = new FormData();
+      formData.append("gif", src_input.files[0]);
+      formData.append("lossy", Math.round((+lossy_input.value) ** 2));
+      formData.append("colors", colors_input.value);
+      formData.append("color_method", color_method_input.value);
+      formData.append("optimize", optimize_input.value);
+      formData.append("flip_horizontal", flip_horizontal_input.checked);
+      formData.append("flip_vertical", flip_vertical_input.checked);
+      formData.append("resize_type", resize_type_input.value);
+      formData.append("resize_method", resize_method_input.value);
+      formData.append("resize_x", resize_x_input.value);
+      formData.append("resize_y", resize_y_input.value);
+      formData.append("resize_colors", resize_colors_input.value);
+
+      originalImage.src = URL.createObjectURL(src_input.files[0]);
+      fetch("http://localhost:3000/optimise", {
+        method: "POST",
+        body: formData,
+      })
+      .then(a => a.blob())
+      .then(a => {
+        originalImage.src = URL.createObjectURL(src_input.files[0]);
+        optimisedImage.src = URL.createObjectURL(a);
+      });
+    }
+
+    let compressImageTimeout = false;
+    function requestImageCompression() {
+      clearTimeout(compressImageTimeout);
+      compressImageTimeout = setTimeout(compressImage, 500);
+    }
+
+    src_input.addEventListener("change", requestImageCompression);
+    colors_input.addEventListener("input", requestImageCompression);
+    color_method_input.addEventListener("input", requestImageCompression);
+    optimize_input.addEventListener("input", requestImageCompression);
+    flip_horizontal_input.addEventListener("input", requestImageCompression);
+    flip_vertical_input.addEventListener("input", requestImageCompression);
+    resize_type_input.addEventListener("input", requestImageCompression);
+    resize_method_input.addEventListener("input", requestImageCompression);
+    resize_x_input.addEventListener("input", requestImageCompression);
+    resize_y_input.addEventListener("input", requestImageCompression);
+    resize_colors_input.addEventListener("input", requestImageCompression);
   </script>
 </body>
 </html>
