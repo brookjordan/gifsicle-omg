@@ -579,8 +579,10 @@ grid-template:
         bottomHeight,
       } = getSectionHeights(window.innerHeight, imageSectionNaturalHeight, toolsSectionNaturalHeight);
 
+      let toolsSectionScrollTop = toolsSection.scrollTop;
       imageSection.style.height = `${topHeight}px`;
       toolsSection.style.height = `${bottomHeight}px`;
+      toolsSection.scrollTo(0, toolsSectionScrollTop);
     }
 
     let rerunHeights = false;
