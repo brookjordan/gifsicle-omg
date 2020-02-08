@@ -606,8 +606,16 @@ grid-template:
     let requestID;
     let originalImage = document.querySelector('.original img');
     let optimisedImage = document.querySelector('.optimised img');
-    originalImage.onload = startResizeTimer;
-    optimisedImage.onload = startResizeTimer;
+    originalImage.addEventListener("load", () => {
+      startResizeTimer();
+      originalImage.src = originalImage.src;
+      optimisedImage.src = optimisedImage.src;
+    });
+    optimisedImage.addEventListener("load", () => {
+      startResizeTimer();
+      originalImage.src = originalImage.src;
+      optimisedImage.src = optimisedImage.src;
+    });
 
     function compressImage() {
       requestID = `${(new Date()).getTime()}${Math.random()}`;
