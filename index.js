@@ -70,6 +70,7 @@ app.post("/optimise",
     let framesWereDeleted = false;
     let options = [
       `--output=${compressedGifPath}`,
+      `-U`,
     ];
     if (request.body.delete && request.body.delete !== "none") {
       let frameCount = (await exec(`identify -format "%n\n" ${request.file.path} | head -n 1`)).stdout.trim();
