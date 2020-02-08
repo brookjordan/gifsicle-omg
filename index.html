@@ -608,16 +608,6 @@ grid-template:
     let requestID;
     let originalImage = document.querySelector('.original img');
     let optimisedImage = document.querySelector('.optimised img');
-    originalImage.addEventListener("load", () => {
-      startResizeTimer();
-      originalImage.src = originalImage.src;
-      optimisedImage.src = optimisedImage.src;
-    });
-    optimisedImage.addEventListener("load", () => {
-      startResizeTimer();
-      originalImage.src = originalImage.src;
-      optimisedImage.src = optimisedImage.src;
-    });
 
     function compressImage() {
       requestID = `${(new Date()).getTime()}${Math.random()}`;
@@ -676,6 +666,12 @@ grid-template:
           original_size.innerText = a.originalSize;
           optimised_size.innerText = a.optimisedSize;
           percent_diff.innerText = `${((a.optimisedSize / a.originalSize) * 100).toFixed(2)}%`;
+
+          optimisedImage.addEventListener("load", () => {
+            startResizeTimer();
+            originalImage.src = originalImage.src;
+            optimisedImage.src = optimisedImage.src;
+          }, { once: true });
         }
       });
     }
