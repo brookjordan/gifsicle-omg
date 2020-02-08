@@ -228,6 +228,6 @@ app.post("*", (request, resource, next) => {
   resource.send("<h1>404</h1>");
 });
 
-app.listen(3000, () => {
-  console.log(3000);
+app.listen(process.env.PORT || 3000, () => {
+  console.log(process.env.PORT || 3000);
 });
