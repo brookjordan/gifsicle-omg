@@ -11,7 +11,7 @@ const execFile = promisify(childProcess.execFile);
 
 const app = require("express")();
 
-let uploadGif = multer({ dest: "i" })
+let uploadGif = multer({ dest: path.join(__dirname, "i") })
 
 function sendGif(request, resource, next) {
   let filePath = path.join(__dirname, "i", request.params.src);
@@ -39,7 +39,7 @@ function shutdown(signal) {
     killedOnce = true;
 
     if (err) console.error(err.stack || err);
-    let killPromises = fs.readdirSync("i").map(filePath => unlink(path.join("i", filePath)));
+    let killPromises = fs.readdirSync(path.join(__dirname, "i")).map(filePath => unlink(path.join("i", filePath)));
     await Promise.all(killPromises);
     process.exit(err ? 1 : 0);
   };
@@ -205,7 +205,7 @@ app.post("/optimise",
 
     resource.status(200);
     resource.send({
-      src: compressedGifPath,
+      src: `/i/${request.file.filename}.gif`,
       originalSize: originalGifStats.size,
       optimisedSize: optimisedGifStats.size,
       requestID: request.body.request_id,
